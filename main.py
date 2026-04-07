@@ -4,21 +4,14 @@ import logging
 from pyrogram import Client, filters
 
 # লগিং কনফিগারেশন
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO)
 
-# এনভায়রনমেন্ট ভেরিয়েবল লোড
-API_ID = int(os.getenv("API_ID", "0"))
-API_HASH = os.getenv("API_HASH", "")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+# এনভায়রনমেন্ট ভেরিয়েবল চেক
+API_ID = int(os.environ.get("API_ID", 0))
+API_HASH = os.environ.get("API_HASH", "")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-# ভেরিফিকেশন (খালি থাকলে এরর দেখাবে)
-if not API_ID or not API_HASH or not BOT_TOKEN:
-    raise ValueError("API_ID, API_HASH, BOT_TOKEN সেট করা হয়নি!")
-
-# বট ক্লায়েন্ট
+# বট ক্লায়েন্ট সেটআপ
 app = Client(
     "my_filter_bot",
     api_id=API_ID,
@@ -26,22 +19,15 @@ app = Client(
     bot_token=BOT_TOKEN
 )
 
-# /start কমান্ড
 @app.on_message(filters.command("start") & filters.private)
 async def start_handler(client, message):
-    user = message.from_user
-    name = user.first_name if user else "User"
+    await message.reply_text(f"হ্যালো {message.from_user.first_name}!\nবটটি এখন সচল আছে।")
 
-    await message.reply_text(
-        f"হ্যালো {name}!\n🤖 বটটি এখন সচল আছে।"
-    )
-
-# রান ফাংশন
 async def main():
-    async with app:
-        print("✅ বট সফলভাবে চালু হয়েছে!")
-        await asyncio.Event().wait()  # বট চালু রাখে
+    await app.start()
+    print("বট সফলভাবে চালু হয়েছে!")
+    await asyncio.Event().wait()
 
-# এন্ট্রি পয়েন্ট
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
