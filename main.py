@@ -81,6 +81,8 @@ async def main():
     threading.Thread(target=run_health_check, daemon=True).start()
     await app.start()
     logger.info("✅ বট সফলভাবে চালু হয়েছে!")
+    # সাময়িকভাবে এই লাইনটি কমেন্ট (#) করে দিন যাতে বট চালু হওয়ার সময় ব্লক না হয়
+    # await auto_index_all_movies()
     # বট চালু হওয়ার সাথে সাথে পুরনো মুভি ইনডেক্স করবে
     await auto_index_all_movies()
     await asyncio.Event().wait()
