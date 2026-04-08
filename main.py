@@ -43,3 +43,24 @@ if __name__ == "__main__":
     # বট সরাসরি রান করা (এটিই মেসেজ হ্যান্ডেল করবে)
     print("✅ বট সফলভাবে চালু হয়েছে এবং মেসেজের জন্য প্রস্তুত!")
     app.run()
+from motor.motor_asyncio import AsyncIOMotorClient
+
+# ডাটাবেস কানেকশন
+db_client = AsyncIOMotorClient(os.environ.get("DATABASE_URI"))
+db = db_client["movie_bot"]
+movies_col = db["movies"]
+
+# চ্যানেল থেকে অটো-ইনডেক্সিং হ্যান্ডলার
+@app.on_message(filters.chat(int(os.environ.get("CHANNELS"))) & (filters.document | filters.video))
+async def auto_index(client, message):
+    file = message.document or message.video
+    file_name = file.file_name
+    file_id = file.file_id
+    
+    # ডাটাবেসে সেভ করা
+    await movies_col.update_one(
+        {"file_name": file_name},
+        {"$set": {"file_id": file_id, "caption": message.caption}},
+        upsert=True
+    )
+    print(f"✅ ইনডেক্স করা হয়েছে: {file_name}")
