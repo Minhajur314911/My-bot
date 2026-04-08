@@ -1,50 +1,46 @@
 import os
 import asyncio
 import logging
+import http.server
+import socketserver
+import threading
 from pyrogram import Client, filters
 
-# ধাপ ১-৫: লগিং এবং প্রয়োজনীয় লাইব্রেরি সেটআপ
+# লগিং সেটআপ
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# ধাপ ৬-১১: এনভায়রনমেন্ট ভেরিয়েবল লোড এবং চেক
-# Render-এর 'Environment' সেকশনে আপনি যে নামগুলো (Key) দিয়েছেন, এখানে সেগুলোই ব্যবহার করা হয়েছে
+# ১. হেলথ চেক সার্ভার (Render-এর 'No open ports' এরর বন্ধ করতে)
+def run_health_check():
+    # Render অটোমেটিক একটি PORT এনভায়রনমেন্ট ভেরিয়েবল দেয়
+    port = int(os.environ.get("PORT", 8080))
+    handler = http.server.SimpleHTTPRequestHandler
+    with socketserver.TCPServer(("", port), handler) as httpd:
+        logger.info(f"Health check server started on port {port}")
+        httpd.serve_forever()
+
+# ২. টেলিগ্রাম বট সেটআপ
 API_ID = int(os.environ.get("API_ID", "0"))
 API_HASH = os.environ.get("API_HASH", "")
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
 
-if not API_ID or not API_HASH or not BOT_TOKEN:
-    logger.error("ভুল: API_ID, API_HASH অথবা BOT_TOKEN পাওয়া যায়নি!")
-    # Render-এর এনভায়রনমেন্ট ভেরিয়েবল চেক করতে হবে
+app = Client("my_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
-# ধাপ ১২: বট ক্লায়েন্ট কনফিগারেশন
-app = Client(
-    "my_filter_bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN
-)
-
-# ধাপ ১৩: কমান্ড হ্যান্ডলার (/start কমান্ডের জন্য)
 @app.on_message(filters.command("start") & filters.private)
-async def start_handler(client, message):
-    user_name = message.from_user.first_name if message.from_user else "User"
-    await message.reply_text(
-        f"হ্যালো {user_name}!\n\n"
-        "🤖 আপনার টেলিগ্রাম বটটি এখন সফলভাবে সচল আছে।\n"
-        "এটি Render এবং Python 3.10-এ রান করছে।"
-    )
+async def start(client, message):
+    await message.reply_text(f"হ্যালো {message.from_user.first_name}! আমি অনলাইনে আছি।")
 
-# ধাপ ১৪: মেইন রান ফাংশন (বটকে চালু রাখার জন্য)
-async def main():
+async def run_bot():
     async with app:
-        logger.info("✅ বট সফলভাবে চালু হয়েছে এবং মেসেজের জন্য অপেক্ষা করছে...")
+        logger.info("✅ বট সফলভাবে চালু হয়েছে এবং মেসেজের জন্য প্রস্তুত!")
         await asyncio.Event().wait()
 
-# ধাপ ১৫: এন্ট্রি পয়েন্ট
+# ৩. মেইন ফাংশন
 if __name__ == "__main__":
+    # হেলথ চেক আলাদা থ্রেডে চালানো যেন Render কোনো পোর্ট খুঁজে পায়
+    threading.Thread(target=run_health_check, daemon=True).start()
+    
     try:
-        # এটি পাইথনের নতুন ভার্সনগুলোর জন্য সবচেয়ে নিরাপদ পদ্ধতি
-        asyncio.run(main())
+        asyncio.run(run_bot())
     except (KeyboardInterrupt, SystemExit):
-        logger.info("বট বন্ধ করা হচ্ছে...")
+        logger.info("বট বন্ধ হচ্ছে...")
