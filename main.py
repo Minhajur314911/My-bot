@@ -37,10 +37,9 @@ async def run_bot():
 
 # ৩. মেইন ফাংশন
 if __name__ == "__main__":
-    # হেলথ চেক আলাদা থ্রেডে চালানো যেন Render কোনো পোর্ট খুঁজে পায়
+    # হেলথ চেক আলাদা থ্রেডে চালানো যেন Render পোর্ট খুঁজে পায়
     threading.Thread(target=run_health_check, daemon=True).start()
-    
-    try:
-        asyncio.run(run_bot())
-    except (KeyboardInterrupt, SystemExit):
-        logger.info("বট বন্ধ হচ্ছে...")
+
+    # বট সরাসরি রান করা (এটিই মেসেজ হ্যান্ডেল করবে)
+    print("✅ বট সফলভাবে চালু হয়েছে এবং মেসেজের জন্য প্রস্তুত!")
+    app.run()
