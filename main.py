@@ -28,7 +28,7 @@ def run_health_check():
         logger.info(f"Health server on port {port}")
         httpd.serve_forever()
 
-# ৪. অটো-ইনডেক্সিং ফাংশন (পুরনো সব মুভি নিজে থেকে খুঁজবে)
+# ৪. অটো-ইনডেক্সিং ফাংশন (বিরতিসহ যাতে ব্লক না হয়)
 async def auto_index_all_movies():
     logger.info("পুরনো মুভি ইনডেক্স করা শুরু হচ্ছে...")
     count = 0
@@ -41,6 +41,10 @@ async def auto_index_all_movies():
                 upsert=True
             )
             count += 1
+            # প্রতি ১০টি ফাইল ইনডেক্স করার পর ২ সেকেন্ড বিরতি
+            if count % 10 == 0:
+                await asyncio.sleep(2) 
+                
     logger.info(f"✅ মোট {count}টি পুরনো মুভি ইনডেক্স করা হয়েছে!")
 
 # ৫. নতুন মুভি ইনডেক্সিং (এখন থেকে যা আপলোড করবেন)
